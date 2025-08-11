@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 
 using PersianLibraryOfBabel.Models;
@@ -19,43 +20,6 @@ public partial class MainWindow : Window {
 		_viewModel  = new InputViewModel();
 		DataContext = _viewModel;
 		Log.Information("MainWindow initialized at {Time}", DateTime.Now);
-	}
-
-	private void GenerateButton_Click(object sender, RoutedEventArgs e) {
-		try {
-			// Validate inputs
-			if (string.IsNullOrWhiteSpace(_viewModel.HexId) ||
-				_viewModel.Wall   < 1                       ||
-				_viewModel.Wall   > 4                       ||
-				_viewModel.Shelf  < 1                       ||
-				_viewModel.Shelf  > 5                       ||
-				_viewModel.Volume < 1                       ||
-				_viewModel.Volume > 32                      ||
-				_viewModel.Page   < 1                       ||
-				_viewModel.Page   > 410) {
-				Log.Warning("Invalid input at {Time}", DateTime.Now);
-				MessageBox.Show("ورودی‌ها نامعتبرند! لطفاً مقادیر درست وارد کنید.",
-								"خطا",
-								MessageBoxButton.OK,
-								MessageBoxImage.Error);
-				return;
-			}
-
-			// Create position and generate content
-			LibraryPosition position = new LibraryPosition(_viewModel.HexId,
-														   _viewModel.Wall,
-														   _viewModel.Shelf,
-														   _viewModel.Volume,
-														   _viewModel.Page);
-			string content = ContentGenerator.GeneratePageContent(position);
-
-			// Display content in RichTextBox
-			SetRichTextBoxContent(content, null);
-			Log.Information("Content generated for {Position} at {Time}", position, DateTime.Now);
-		} catch (Exception ex) {
-			Log.Error(ex, "Error generating content at {Time}", DateTime.Now);
-			MessageBox.Show("خطایی رخ داد! لاگ‌ها را بررسی کنید.", "خطا", MessageBoxButton.OK, MessageBoxImage.Error);
-		}
 	}
 
 	private void SearchButton_Click(object sender, RoutedEventArgs e) {
@@ -89,13 +53,25 @@ public partial class MainWindow : Window {
 
 	private void ClearButton_Click(object sender, RoutedEventArgs e) {
 		_viewModel.HexId     = string.Empty;
-		_viewModel.Wall      = 1;
-		_viewModel.Shelf     = 1;
-		_viewModel.Volume    = 1;
-		_viewModel.Page      = 1;
+		_viewModel.Wall      = 0; // Use 0 to indicate unassigned
+		_viewModel.Shelf     = 0;
+		_viewModel.Volume    = 0;
+		_viewModel.Page      = 0;
 		SearchTextInput.Text = string.Empty;
 		PageContent.Document.Blocks.Clear();
-		Log.Information("Inputs cleared at {Time}", DateTime.Now);
+		Log.Information("Inputs and content cleared at {Time}", DateTime.Now);
+	}
+
+	private void SearchTextInput_TextChanged(object sender, TextChangedEventArgs e) {
+		if (sender is TextBox textBox) {
+			string originalText = textBox.Text;
+			string filteredText = new string(originalText.Where(c => CharacterSet.PersianChars.Contains(c)).ToArray());
+			if (originalText != filteredText) {
+				textBox.Text       = filteredText;
+				textBox.CaretIndex = filteredText.Length; // Keep cursor at the end
+				Log.Information("Filtered invalid characters from search input at {Time}", DateTime.Now);
+			}
+		}
 	}
 
 	// Helper method to set RichTextBox content with optional bolding of search text
@@ -105,8 +81,19 @@ public partial class MainWindow : Window {
 		if (string.IsNullOrEmpty(content))
 			return;
 
+		// Clean content to remove control characters
+		content = content.Replace("\n", "").Replace("\r", "");
+		// Validate content characters
+		if (!content.All(c => CharacterSet.PersianChars.Contains(c))) {
+			Log.Warning("Content contains invalid characters at {Time}", DateTime.Now);
+			content = new string(content.Where(c => CharacterSet.PersianChars.Contains(c)).ToArray());
+		}
+		Log.Information("Cleaned content length: {Length} at {Time}", content.Length, DateTime.Now);
+
 		// Create a single paragraph for content
-		Paragraph paragraph = new Paragraph();
+		Paragraph paragraph = new Paragraph {
+												TextAlignment = TextAlignment.Right // Align text for Persian
+											};
 
 		// If no search text, display content as plain text
 		if (string.IsNullOrEmpty(searchText)) {
@@ -178,11 +165,11 @@ public class InputViewModel : INotifyPropertyChanged {
 			OnPropertyChanged(nameof(Page));
 		}
 	}
-	private int    _wall   = 1;
-	private int    _shelf  = 1;
-	private int    _volume = 1;
-	private int    _page   = 1;
-	private string _hexId  = string.Empty;
+	private int    _wall;
+	private int    _shelf;
+	private int    _volume;
+	private int    _page;
+	private string _hexId = string.Empty;
 
 	private void OnPropertyChanged(string propertyName) {
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

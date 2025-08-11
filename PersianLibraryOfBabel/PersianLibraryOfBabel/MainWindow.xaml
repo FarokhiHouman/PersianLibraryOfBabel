@@ -4,40 +4,87 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:PersianLibraryOfBabel"
         Title="کتابخانه بابل پارسی" Height="700" Width="900"
-        WindowStartupLocation="CenterScreen" FontFamily="Vazir">
+        WindowStartupLocation="CenterScreen" FontFamily="Vazir"
+        FlowDirection="RightToLeft">
 	<Window.Resources>
-		<!-- Style for TextBoxes with validation feedback -->
-		<Style TargetType="TextBox" x:Key="InputTextBoxStyle">
-			<Setter Property="Margin" Value="5"/>
+		<!-- Style for TextBlocks for read-only display -->
+		<Style TargetType="TextBlock" x:Key="DisplayTextBlockStyle">
+			<Setter Property="Margin" Value="10"/>
 			<Setter Property="Width" Value="120"/>
-			<Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
-			<Style.Triggers>
-				<Trigger Property="Validation.HasError" Value="True">
-					<Setter Property="BorderBrush" Value="Red"/>
-					<Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent}"/>
-				</Trigger>
-			</Style.Triggers>
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="TextAlignment" Value="Right"/>
+			<Setter Property="VerticalAlignment" Value="Center"/>
+		</Style>
+		<!-- Style for Label TextBlocks -->
+		<Style TargetType="TextBlock" x:Key="LabelTextBlockStyle">
+			<Setter Property="Margin" Value="10"/>
+			<Setter Property="Width" Value="120"/>
+			<Setter Property="FontSize" Value="16"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="TextAlignment" Value="Right"/>
+			<Setter Property="VerticalAlignment" Value="Center"/>
 		</Style>
 		<!-- Style for RichTextBox to match UI -->
 		<Style TargetType="RichTextBox" x:Key="ContentRichTextBoxStyle">
-			<Setter Property="Margin" Value="5"/>
+			<Setter Property="Margin" Value="10"/>
 			<Setter Property="FontSize" Value="14"/>
 			<Setter Property="IsReadOnly" Value="True"/>
-			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="BorderBrush" Value="#BBDEFB"/>
 			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Padding" Value="10"/>
+			<Setter Property="MinWidth" Value="800"/>
+		</Style>
+		<!-- Style for Search TextBox -->
+		<Style TargetType="TextBox" x:Key="SearchTextBoxStyle">
+			<Setter Property="Margin" Value="10"/>
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="VerticalContentAlignment" Value="Center"/>
+			<Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
+			<Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
+			<Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="False"/>
+			<Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="8"/>
 		</Style>
 	</Window.Resources>
 	<Grid Margin="20">
+		<Grid.Background>
+			<LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+				<GradientStop Color="#E3F2FD" Offset="0"/>
+				<GradientStop Color="#FFFFFF" Offset="1"/>
+			</LinearGradientBrush>
+		</Grid.Background>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
+			<!-- Welcome Message -->
 			<RowDefinition Height="Auto"/>
+			<!-- Position Display -->
+			<RowDefinition Height="Auto"/>
+			<!-- Search Section -->
 			<RowDefinition Height="*"/>
+			<!-- Content Display -->
 			<RowDefinition Height="Auto"/>
+			<!-- Action Buttons -->
 		</Grid.RowDefinitions>
 
-		<!-- Input Section -->
-		<GroupBox Grid.Row="0" Header="مشخصات موقعیت" Style="{StaticResource MaterialDesignGroupBox}" Margin="0,0,0,10">
+		<!-- Welcome Message -->
+		<materialDesign:Card Grid.Row="0" Margin="0,0,0,15" Padding="15"
+                             Background="#E3F2FD" materialDesign:ElevationAssist.Elevation="Dp4"
+                             >
+			<TextBlock Text="به کتابخانه بابل پارسی خوش آمدید! متن خود را جستجو کنید!"
+                       TextWrapping="Wrap" FontSize="20" FontWeight="Bold" TextAlignment="Right"
+                       Foreground="#1565C0"/>
+		</materialDesign:Card>
+
+		<!-- Position Display -->
+		<GroupBox Grid.Row="1" Header="مشخصات موقعیت" Style="{StaticResource MaterialDesignGroupBox}"
+                  Margin="0,0,0,15" materialDesign:ElevationAssist.Elevation="Dp2" >
 			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<!-- Labels -->
+					<RowDefinition Height="Auto"/>
+					<!-- Values -->
+				</Grid.RowDefinitions>
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="Auto"/>
 					<ColumnDefinition Width="Auto"/>
@@ -45,86 +92,73 @@
 					<ColumnDefinition Width="Auto"/>
 					<ColumnDefinition Width="Auto"/>
 				</Grid.ColumnDefinitions>
-				<TextBox x:Name="HexIdInput" Grid.Column="0" materialDesign:HintAssist.Hint="شناسه شش‌ضلعی"
-                         Style="{StaticResource InputTextBoxStyle}" Width="150">
-					<TextBox.Text>
-						<Binding Path="HexId" UpdateSourceTrigger="PropertyChanged">
-							<Binding.ValidationRules>
-								<DataErrorValidationRule/>
-							</Binding.ValidationRules>
-						</Binding>
-					</TextBox.Text>
-				</TextBox>
-				<TextBox x:Name="WallInput" Grid.Column="1" materialDesign:HintAssist.Hint="دیوار (1-4)"
-                         Style="{StaticResource InputTextBoxStyle}">
-					<TextBox.Text>
-						<Binding Path="Wall" UpdateSourceTrigger="PropertyChanged">
-							<Binding.ValidationRules>
-								<local:RangeValidationRule ValidatesOnTargetUpdated="True" Minimum="1" Maximum="4"/>
-							</Binding.ValidationRules>
-						</Binding>
-					</TextBox.Text>
-				</TextBox>
-				<TextBox x:Name="ShelfInput" Grid.Column="2" materialDesign:HintAssist.Hint="قفسه (1-5)"
-                         Style="{StaticResource InputTextBoxStyle}">
-					<TextBox.Text>
-						<Binding Path="Shelf" UpdateSourceTrigger="PropertyChanged">
-							<Binding.ValidationRules>
-								<local:RangeValidationRule ValidatesOnTargetUpdated="True" Minimum="1" Maximum="5"/>
-							</Binding.ValidationRules>
-						</Binding>
-					</TextBox.Text>
-				</TextBox>
-				<TextBox x:Name="VolumeInput" Grid.Column="3" materialDesign:HintAssist.Hint="جلد (1-32)"
-                         Style="{StaticResource InputTextBoxStyle}">
-					<TextBox.Text>
-						<Binding Path="Volume" UpdateSourceTrigger="PropertyChanged">
-							<Binding.ValidationRules>
-								<local:RangeValidationRule ValidatesOnTargetUpdated="True" Minimum="1" Maximum="32"/>
-							</Binding.ValidationRules>
-						</Binding>
-					</TextBox.Text>
-				</TextBox>
-				<TextBox x:Name="PageInput" Grid.Column="4" materialDesign:HintAssist.Hint="صفحه (1-410)"
-                         Style="{StaticResource InputTextBoxStyle}">
-					<TextBox.Text>
-						<Binding Path="Page" UpdateSourceTrigger="PropertyChanged">
-							<Binding.ValidationRules>
-								<local:RangeValidationRule ValidatesOnTargetUpdated="True" Minimum="1" Maximum="410"/>
-							</Binding.ValidationRules>
-						</Binding>
-					</TextBox.Text>
-				</TextBox>
+				<!-- Labels -->
+				<TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource LabelTextBlockStyle}" Width="150"
+                           Text="شناسه شش‌ضلعی"/>
+				<TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource LabelTextBlockStyle}"
+                           Text="دیوار"/>
+				<TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource LabelTextBlockStyle}"
+                           Text="قفسه"/>
+				<TextBlock Grid.Row="0" Grid.Column="3" Style="{StaticResource LabelTextBlockStyle}"
+                           Text="جلد"/>
+				<TextBlock Grid.Row="0" Grid.Column="4" Style="{StaticResource LabelTextBlockStyle}"
+                           Text="صفحه"/>
+				<!-- Values -->
+				<TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource DisplayTextBlockStyle}" Width="150"
+                           materialDesign:HintAssist.Hint="شناسه شش‌ضلعی" Text="{Binding HexId}"/>
+				<TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource DisplayTextBlockStyle}"
+                           materialDesign:HintAssist.Hint="دیوار (1-4)" Text="{Binding Wall}"/>
+				<TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource DisplayTextBlockStyle}"
+                           materialDesign:HintAssist.Hint="قفسه (1-5)" Text="{Binding Shelf}"/>
+				<TextBlock Grid.Row="1" Grid.Column="3" Style="{StaticResource DisplayTextBlockStyle}"
+                           materialDesign:HintAssist.Hint="جلد (1-32)" Text="{Binding Volume}"/>
+				<TextBlock Grid.Row="1" Grid.Column="4" Style="{StaticResource DisplayTextBlockStyle}"
+                           materialDesign:HintAssist.Hint="صفحه (1-410)" Text="{Binding Page}"/>
 			</Grid>
 		</GroupBox>
 
 		<!-- Search Section -->
-		<GroupBox Grid.Row="1" Header="جستجوی متن" Style="{StaticResource MaterialDesignGroupBox}" Margin="0,0,0,10">
+		<GroupBox Grid.Row="2" Header="جستجوی متن" Style="{StaticResource MaterialDesignGroupBox}"
+                  Margin="0,0,0,15" materialDesign:ElevationAssist.Elevation="Dp2" >
 			<Grid>
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="*"/>
 					<ColumnDefinition Width="Auto"/>
 				</Grid.ColumnDefinitions>
-				<TextBox x:Name="SearchTextInput" materialDesign:HintAssist.Hint="متن مورد نظر (3200 کاراکتر)"
-                         TextWrapping="Wrap" AcceptsReturn="True" Height="60" Margin="5"/>
-				<Button x:Name="SearchButton" Grid.Column="1" Content="جستجو" Click="SearchButton_Click"
-                        Style="{StaticResource MaterialDesignRaisedButton}" Margin="5"/>
+				<TextBox x:Name="SearchTextInput" Grid.Column="0"
+                         materialDesign:HintAssist.Hint="متن مورد نظر (تا 3200 کاراکتر)"
+                         Style="{StaticResource SearchTextBoxStyle}"
+                         MaxLength="3200"
+                         ToolTip="متن پارسی وارد کنید تا مکان آن در کتابخانه پیدا شود"
+                         Margin="10" Height="40" TextChanged="SearchTextInput_TextChanged"/>
+				<Button x:Name="SearchButton" Grid.Column="1"
+                        Margin="10" Background="#1976D2" BorderBrush="#1976D2" materialDesign:RippleAssist.Feedback="#BBDEFB">
+					<StackPanel Orientation="Horizontal">
+						<materialDesign:PackIcon Kind="Magnify" Width="24" Height="24" Margin="0,0,8,0"/>
+						<Button Content="جستجو"  Click="SearchButton_Click"/>
+					</StackPanel>
+				</Button>
 			</Grid>
 		</GroupBox>
 
 		<!-- Content Display -->
-		<GroupBox Grid.Row="2" Header="محتوای صفحه" Style="{StaticResource MaterialDesignGroupBox}">
-			<ScrollViewer VerticalScrollBarVisibility="Auto">
-				<RichTextBox x:Name="PageContent" Style="{StaticResource ContentRichTextBoxStyle}"/>
+		<GroupBox Grid.Row="3" Header="محتوای صفحه" Style="{StaticResource MaterialDesignGroupBox}"
+                  materialDesign:ElevationAssist.Elevation="Dp2">
+			<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+				<RichTextBox x:Name="PageContent" Style="{StaticResource ContentRichTextBoxStyle}"
+                             ToolTip="محتوای کامل صفحه (3200 کاراکتر) با متن جستجو شده به‌صورت برجسته"/>
 			</ScrollViewer>
 		</GroupBox>
 
 		<!-- Action Buttons -->
-		<StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-			<Button x:Name="GenerateButton" Content="تولید محتوا" Click="GenerateButton_Click"
-                    Style="{StaticResource MaterialDesignRaisedButton}" Margin="5"/>
-			<Button x:Name="ClearButton" Content="پاک کردن" Click="ClearButton_Click"
-                    Style="{StaticResource MaterialDesignFlatButton}" Margin="5"/>
+		<StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+			<Button x:Name="ClearButton" Style="{StaticResource MaterialDesignFlatButton}"
+                    Margin="10" Foreground="#D32F2F" materialDesign:RippleAssist.Feedback="#FFCDD2">
+				<StackPanel Orientation="Horizontal">
+					<materialDesign:PackIcon Kind="Close" Width="24" Height="24" Margin="0,0,8,0"/>
+					<Button Content="پاک کردن" Click="ClearButton_Click"/>
+				</StackPanel>
+			</Button>
 		</StackPanel>
 	</Grid>
 </Window>

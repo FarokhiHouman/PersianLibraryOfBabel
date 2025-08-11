@@ -2,7 +2,7 @@
 // Simple, SOLID-compliant model for Persian Library of Babel
 public record LibraryPosition(string HexId, int Wall, int Shelf, int Volume, int Page);
 public static class CharacterSet {
-	public static int CharCount => PersianChars.Length; // 35
+	public static int CharCount => PersianChars.Length; // 36
 	// Persian character set for content generation
 	public static readonly char[] PersianChars = new[] {
 														   'ا',
@@ -39,6 +39,7 @@ public static class CharacterSet {
 														   'ی',
 														   ' ',
 														   '،',
-														   '۔'
+														   '۔',
+														   '\u200C' // Added Zero-Width Non-Joiner (half-space)
 													   };
 }

@@ -40,7 +40,13 @@ public static class ContentGenerator {
 			content[i] =  CharacterSet.PersianChars[charIndex];
 			index      /= CharacterSet.CharCount;
 		}
-		return new string(content);
+		string result = new string(content);
+		// Validate content
+		if (!result.All(c => CharacterSet.PersianChars.Contains(c))) {
+			Log.Error("Generated content contains invalid characters at {Time}", DateTime.Now);
+			return string.Empty;
+		}
+		return result;
 	}
 
 	public static LibraryPosition? FindPositionForText(string inputText) {
