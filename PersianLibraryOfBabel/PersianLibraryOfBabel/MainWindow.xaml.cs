@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Windows;
+using System.Windows.Documents;
 
 using PersianLibraryOfBabel.Models;
 using PersianLibraryOfBabel.Services;
@@ -48,8 +49,8 @@ public partial class MainWindow : Window {
 														   _viewModel.Page);
 			string content = ContentGenerator.GeneratePageContent(position);
 
-			// Display content
-			PageContent.Text = content;
+			// Display content in RichTextBox
+			SetRichTextBoxContent(content, null);
 			Log.Information("Content generated for {Position} at {Time}", position, DateTime.Now);
 		} catch (Exception ex) {
 			Log.Error(ex, "Error generating content at {Time}", DateTime.Now);
@@ -73,8 +74,13 @@ public partial class MainWindow : Window {
 			_viewModel.Shelf  = position.Shelf;
 			_viewModel.Volume = position.Volume;
 			_viewModel.Page   = position.Page;
-			PageContent.Text  = searchText;
-			Log.Information("Search completed for text at {Time}", DateTime.Now);
+
+			// Generate and display full page content with search text bolded
+			string content = ContentGenerator.GeneratePageContent(position);
+			SetRichTextBoxContent(content, searchText);
+			Log.Information("Search completed for text, content generated for {Position} at {Time}",
+							position,
+							DateTime.Now);
 		} catch (Exception ex) {
 			Log.Error(ex, "Error during search at {Time}", DateTime.Now);
 			MessageBox.Show("خطایی در جستجو رخ داد!", "خطا", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -88,8 +94,50 @@ public partial class MainWindow : Window {
 		_viewModel.Volume    = 1;
 		_viewModel.Page      = 1;
 		SearchTextInput.Text = string.Empty;
-		PageContent.Text     = string.Empty;
+		PageContent.Document.Blocks.Clear();
 		Log.Information("Inputs cleared at {Time}", DateTime.Now);
+	}
+
+	// Helper method to set RichTextBox content with optional bolding of search text
+	private void SetRichTextBoxContent(string content, string? searchText) {
+		// Clear existing content
+		PageContent.Document.Blocks.Clear();
+		if (string.IsNullOrEmpty(content))
+			return;
+
+		// Create a single paragraph for content
+		Paragraph paragraph = new Paragraph();
+
+		// If no search text, display content as plain text
+		if (string.IsNullOrEmpty(searchText)) {
+			paragraph.Inlines.Add(new Run(content));
+			PageContent.Document.Blocks.Add(paragraph);
+			Log.Information("Displayed plain content in RichTextBox at {Time}", DateTime.Now);
+			return;
+		}
+
+		// Find and bold all occurrences of searchText
+		int index = 0;
+		while (index < content.Length) {
+			int foundIndex = content.IndexOf(searchText, index, StringComparison.Ordinal);
+			if (foundIndex < 0) {
+				// Add remaining text as plain
+				paragraph.Inlines.Add(new Run(content.Substring(index)));
+				break;
+			}
+
+			// Add text before the match as plain
+			if (foundIndex > index)
+				paragraph.Inlines.Add(new Run(content.Substring(index, foundIndex - index)));
+
+			// Add matched text as bold
+			Run  boldRun = new Run(content.Substring(foundIndex, searchText.Length));
+			Bold bold    = new Bold(boldRun);
+			paragraph.Inlines.Add(bold);
+			index = foundIndex + searchText.Length;
+		}
+		PageContent.Document.Blocks.Add(paragraph);
+		Log.Information("Displayed content with bolded search text in RichTextBox at {Time}", DateTime.Now);
 	}
 }
 
@@ -137,7 +185,7 @@ public class InputViewModel : INotifyPropertyChanged {
 	private string _hexId  = string.Empty;
 
 	private void OnPropertyChanged(string propertyName) {
-		PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 	}
 
 	public event PropertyChangedEventHandler PropertyChanged;

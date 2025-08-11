@@ -1,4 +1,6 @@
 ﻿using System.Numerics;
+using System.Security.Cryptography;
+using System.Text;
 
 using PersianLibraryOfBabel.Models;
 
@@ -54,31 +56,47 @@ public static class ContentGenerator {
 			return null;
 		}
 
-		// Pad input text with spaces if shorter than CharsPerPage
-		string paddedText = inputText.Length < CharsPerPage ?
-								inputText + new string(' ', CharsPerPage - inputText.Length) :
-								inputText;
-		if (inputText.Length < CharsPerPage)
-			Log.Information("Padded text from length {OriginalLength} to {CharsPerPage} with spaces at {Time}",
-							inputText.Length,
-							CharsPerPage,
-							DateTime.Now);
-
 		// Validate input characters
-		if (!paddedText.All(c => CharacterSet.PersianChars.Contains(c))) {
+		if (!inputText.All(c => CharacterSet.PersianChars.Contains(c))) {
 			Log.Warning("Invalid characters in input text at {Time}", DateTime.Now);
 			return null;
 		}
 
-		// Convert text to a unique index (treat text as a base-35 number)
+		// Generate deterministic seed from input text
+		byte[] hash   = SHA256.HashData(Encoding.UTF8.GetBytes(inputText));
+		int    seed   = BitConverter.ToInt32(hash, 0);
+		Random random = new Random(seed);
+
+		// Determine random but deterministic position for inputText in the page
+		int maxStartIndex = CharsPerPage - inputText.Length;
+		int startIndex    = random.Next(0, maxStartIndex + 1);
+		Log.Information("Placing text at index {StartIndex} for input length {Length} at {Time}",
+						startIndex,
+						inputText.Length,
+						DateTime.Now);
+
+		// Generate deterministic random content for the entire page
+		char[] pageContent = new char[CharsPerPage];
+		for (int i = 0; i < CharsPerPage; i++) {
+			if (i >= startIndex &&
+				i < startIndex + inputText.Length) {
+				// Place inputText at the chosen position
+				pageContent[i] = inputText[i - startIndex];
+			} else {
+				// Fill with deterministic random Persian chars
+				pageContent[i] = CharacterSet.PersianChars[random.Next(CharacterSet.CharCount)];
+			}
+		}
+
+		// Convert page content to a unique index
 		BigInteger textIndex = 0;
-		for (int i = 0; i < paddedText.Length; i++) {
-			int charIndex = Array.IndexOf(CharacterSet.PersianChars, paddedText[i]);
+		for (int i = 0; i < pageContent.Length; i++) {
+			int charIndex = Array.IndexOf(CharacterSet.PersianChars, pageContent[i]);
 			textIndex = textIndex * CharacterSet.CharCount + charIndex;
 		}
 
 		// Map index to position
-		BigInteger totalPagesPerHex = MaxWalls  * MaxShelves * MaxVolumes * PagesPerBook; // 4 * 5 * 32 * 410 = 262,400
+		BigInteger totalPagesPerHex = MaxWalls  * MaxShelves * MaxVolumes * PagesPerBook;
 		BigInteger hexIndex         = textIndex / totalPagesPerHex;
 		BigInteger remaining        = textIndex % totalPagesPerHex;
 		int        page             = (int)(remaining % PagesPerBook) + 1;
